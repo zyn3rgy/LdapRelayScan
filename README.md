@@ -16,6 +16,9 @@ However, to determine if the server-side protection of standard LDAP is enforced
 ## Usage
 
 The tool has two methods, **LDAPS** (the default), and **BOTH**. LDAPS only requires a domain controller IP address, because this check can be preformed unauthenticated. The BOTH method will require a username and password or NT hash. The Active Directory domain is not required, it will be determine via anonymous LDAP bind.
+> Note: DNS needs to resolve properly. If you are routing through SOCKS or running on a non-domain-joined host, ensure this is working.
+
+*INSERT IMAGE*
 
 ## Examples
 
@@ -25,6 +28,7 @@ python3.9 LdapRelayScan.py -method BOTH -dc-ip 10.0.0.20 -u domainuser1
 python3.9 LdapRelayScan.py -method BOTH -dc-ip 10.0.0.20 -u domainuser1 -p badpassword2
 python3.9 LdapRelayScan.py -method BOTH -dc-ip 10.0.0.20 -u domainuser1 -nthash e6ee750a1feb2c7ee50d46819a6e4d25
 ```
+> Note: Tested using python3.9 on client-side, targeting unpatched Windows Server 2016 and up-to-date Windows Server 2022
 
 ## Error-Based Enumeration Specifics
 
