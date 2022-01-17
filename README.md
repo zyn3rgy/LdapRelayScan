@@ -1,5 +1,5 @@
 # LDAP Relay Scan 
-A tool to check Domain Controllers for LDAP server protections regarding the relay of NTLM authentication. If you're interested in the specifics of the error-based enumeration, see [below](blah).
+A tool to check Domain Controllers for LDAP server protections regarding the relay of NTLM authentication. If you're interested in the specifics of the error-based enumeration, see [below](https://github.com/zyn3rgy/LdapRelayScan#error-based-enumeration-specifics). For details regarding what can be done when you identify a lack of LDAP protections, see the [references section](https://github.com/zyn3rgy/LdapRelayScan#references).
 ## Summary
 There are unique, server-side protections when attempting to relay NTLM authentication LDAP on Domain Controllers. The LDAP protections this tools attempts to enumerate include:
  - LDAPS - [channel binding](https://support.microsoft.com/en-us/topic/use-the-ldapenforcechannelbinding-registry-entry-to-make-ldap-authentication-over-ssl-tls-more-secure-e9ecfa27-5e57-8519-6ba3-d2c06b21812e)
@@ -45,15 +45,16 @@ On a Domain Controller that has been patched since [CVE-2017-8563](https://msrc.
 
 Decrypting and monitoring LDAP over SSL/TLS traffic on a Domain Controller allowed for the identification of a difference in errors during bind attempts when channel binding is enforced versus when it's not. When attempting a bind to LDAP over SSL/TLS using invalid credentials, you will recieve the expected [resultCode 49](https://ldapwiki.com/wiki/LDAP_INVALID_CREDENTIALS), and in the error message contents you will see `data 52e`.  However, when channel binding is enforced and the LDAP client does not calculate and include the Channel Binding Token (CBT), the resultCode will still be 49, but the error message contents will contain `data 80090346` meaning `SEC_E_BAD_BINDINGS` or that [the client's Supplied Support Provider Interface (SSPI) channel bindings were incorrect](https://ldapwiki.com/wiki/Common%20Active%20Directory%20Bind%20Errors).
 
-![](https://github.com/zyn3rgy/LdapRelayScan/blob/main/img/ldaps_compared.png?raw=true)
+![](https://github.com/zyn3rgy/LdapRelayScan/blob/main/img/ldaps_compared.png)
 
-#### Resources for 'data 80090346' error
- - http://gary-nebbett.blogspot.com/2020/01/ldap-channel-binding.html
- - https://ldapwiki.com/wiki/Common%20Active%20Directory%20Bind%20Errors
- - https://kb.vmware.com/s/article/77093
- - https://kb.netapp.com/Advice_and_Troubleshooting/Data_Storage_Software/ONTAP_OS/ONTAP_is_unable_to_create_CIFS_server_with_AcceptSecurityContext_error_data_80090346
- - https://github.com/fox-it/BloodHound.py/issues/55
+> Note: Mentions of the `data 8009034` error during LDAP over SSL/TLS binding [[1]](http://gary-nebbett.blogspot.com/2020/01/ldap-channel-binding.html) [[2]](https://ldapwiki.com/wiki/Common%20Active%20Directory%20Bind%20Errors)  [[3]](https://kb.vmware.com/s/article/77093)  [[4]](https://kb.netapp.com/Advice_and_Troubleshooting/Data_Storage_Software/ONTAP_OS/ONTAP_is_unable_to_create_CIFS_server_with_AcceptSecurityContext_error_data_80090346)  [[5]](https://github.com/fox-it/BloodHound.py/issues/55)
+
 
 ## References
-Invaluable resources for understand and contextualization of this material.
- - 1
+Invaluable resources for understanding and contextualization of this material.
+ - [@HackAndDo](https://twitter.com/HackAndDo) - [NTLM relay](https://en.hackndo.com/ntlm-relay/)
+ - [@_nwodtuhs](https://twitter.com/_nwodtuhs) - [NTLM relay mindmap](https://twitter.com/_nwodtuhs/status/1424433914752421898?s=20)
+ - [@_dirkjan](twitter.com/_dirkjan) - [PrivExchange](https://dirkjanm.io/abusing-exchange-one-api-call-away-from-domain-admin/), the [ADCS ESC8 write up](https://dirkjanm.io/ntlm-relaying-to-ad-certificate-services/), the [NTLM relay for RBCD write up](dirkjanm.io/worst-of-both-worlds-ntlm-relaying-and-kerberos-delegation/), and more
+ - [@domchell](https://twitter.com/domchell) - implementation of [Farmer](github.com/mdsecactivebreach/Farmer) and [explanation](https://www.mdsec.co.uk/2021/02/farming-for-red-teams-harvesting-netntlm/)
+ - [@elad_shamir](https://twitter.com/elad_shamir) - thorough [explanations of abusing RBCD](shenaniganslabs.io/2019/01/28/Wagging-the-Dog.html) in [multiple scenarios](https://eladshamir.com/2019/08/08/Lock-Screen-LPE.html), and [shadow credentials](posts.specterops.io/shadow-credentials-abusing-key-trust-account-mapping-for-takeover-8ee1a53566ab) 
+ - [@tifkin_](twitter.com/tifkin_) & [@topotam77](https://twitter.com/topotam77) - NTLM authentication coercion methods
