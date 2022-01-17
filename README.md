@@ -39,3 +39,9 @@ On a Domain Controller, the policy called ```Domain Controller: LDAP server sign
 
 ### LDAPS - Channel Binding Token Requirements
 On a Domain Controller that has been patched since [CVE-2017-8563](https://msrc.microsoft.com/update-guide/vulnerability/CVE-2017-8563) the capability to enforce LDAPS channel binding has existed. The specific policy is called `Domain Controller: LDAP server channel binding token requirements` and can be set to either `Never`, `When supported`, or `Always`. This is also [not required by default](https://msrc.microsoft.com/update-guide/en-us/vulnerability/ADV190023) (at the time of writing this). 
+
+Decrypting and monitoring LDAP over SSL/TLS traffic on a Domain Controller allowed for the identification of a difference in errors during bind attempts when channel binding is enforced versus when it's not. When attempting a bind to LDAP over SSL/TLS using invalid credentials, you will recieve the expected [resultCode 49](https://ldapwiki.com/wiki/LDAP_INVALID_CREDENTIALS), and in the error message contents you will see `data 52e`.  However, when channel binding is enforced and the LDAP client does not calculate and include the Channel Binding Token (CBT), the resultCode will still be 49, but the error message contents will contain `data 80090346` meaning `SEC_E_BAD_BINDINGS` or that [the client's Supplied Support Provider Interface (SSPI) channel bindings were incorrect](https://ldapwiki.com/wiki/Common%20Active%20Directory%20Bind%20Errors).
+
+*INSERT IMAGE*
+
+*INSERT REFERENCES*
