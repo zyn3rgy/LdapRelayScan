@@ -35,11 +35,6 @@ python3.9 LdapRelayScan.py -method BOTH -dc-ip 10.0.0.20 -u domainuser1 -nthash 
 
 ## Error-Based Enumeration Specifics
 
-### [LDAP] Server Signing Requirements
-On a Domain Controller, the policy called ```Domain Controller: LDAP server signing requirements``` is set to `None`, `Require signing`, or it's just not defined. When not defined, it defaults to not requiring signing (at the time of writing this). The error which identifies this protection as required is when a [sicily NTLM](https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-adts/e7d814a5-4cb5-4b0d-b408-09d79988b550) or [simple](https://ldapwiki.com/wiki/Simple%20Authentication) bind attempt responds with a [resultCode of 8](https://ldap.com/ldap-result-code-reference-core-ldapv3-result-codes/#rc-strongerAuthRequired), signifying `strongerAuthRequired`. This will only occur if credentials during the LDAP bind are validated. 
-
-![](https://github.com/zyn3rgy/LdapRelayScan/blob/main/img/ldap_strongautherror.PNG)
-
 ### [LDAPS] Channel Binding Token Requirements
 On a Domain Controller that has been patched since [CVE-2017-8563](https://msrc.microsoft.com/update-guide/vulnerability/CVE-2017-8563), the capability to enforce LDAPS channel binding has existed. The specific policy is called `Domain Controller: LDAP server channel binding token requirements` and can be set to either `Never`, `When supported`, or `Always`. This is also [not required by default](https://msrc.microsoft.com/update-guide/en-us/vulnerability/ADV190023) (at the time of writing this). 
 
@@ -49,9 +44,13 @@ Decrypting and monitoring LDAP over SSL/TLS traffic on a Domain Controller allow
 
 > Note: Mentions of the `data 8009034` error during LDAP over SSL/TLS binding [[1]](http://gary-nebbett.blogspot.com/2020/01/ldap-channel-binding.html) [[2]](https://ldapwiki.com/wiki/Common%20Active%20Directory%20Bind%20Errors)  [[3]](https://kb.vmware.com/s/article/77093)  [[4]](https://kb.netapp.com/Advice_and_Troubleshooting/Data_Storage_Software/ONTAP_OS/ONTAP_is_unable_to_create_CIFS_server_with_AcceptSecurityContext_error_data_80090346)  [[5]](https://github.com/fox-it/BloodHound.py/issues/55)
 
+### [LDAP] Server Signing Requirements
+On a Domain Controller, the policy called ```Domain Controller: LDAP server signing requirements``` is set to `None`, `Require signing`, or it's just not defined. When not defined, it defaults to not requiring signing (at the time of writing this). The error which identifies this protection as required is when a [sicily NTLM](https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-adts/e7d814a5-4cb5-4b0d-b408-09d79988b550) or [simple](https://ldapwiki.com/wiki/Simple%20Authentication) bind attempt responds with a [resultCode of 8](https://ldap.com/ldap-result-code-reference-core-ldapv3-result-codes/#rc-strongerAuthRequired), signifying `strongerAuthRequired`. This will only occur if credentials during the LDAP bind are validated. 
+
+![](https://github.com/zyn3rgy/LdapRelayScan/blob/main/img/ldap_strongautherror.PNG)
 
 ## References
-Invaluable resources for understanding and contextualization of this material.
+A few invaluable resources for contextualization of this material and how it fits into common attack scenarios.
  - [@HackAndDo](https://twitter.com/HackAndDo) - [NTLM relay](https://en.hackndo.com/ntlm-relay/)
  - [@_nwodtuhs](https://twitter.com/_nwodtuhs) - [NTLM relay mindmap](https://twitter.com/_nwodtuhs/status/1424433914752421898?s=20)
  - [@_dirkjan](twitter.com/_dirkjan) - [PrivExchange](https://dirkjanm.io/abusing-exchange-one-api-call-away-from-domain-admin/), the [ADCS ESC8 write up](https://dirkjanm.io/ntlm-relaying-to-ad-certificate-services/), the [NTLM relay for RBCD write up](dirkjanm.io/worst-of-both-worlds-ntlm-relaying-and-kerberos-delegation/), and more
