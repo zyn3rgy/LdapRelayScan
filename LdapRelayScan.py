@@ -5,6 +5,8 @@ import sys
 import ssl
 import socket
 import getpass
+import asyncio
+from msldap.commons.url import MSLDAPURLDecoder, MSLDAPClientConnection
 
 
 class CheckLdaps:
@@ -18,7 +20,7 @@ class CheckLdaps:
 #errors returned. This can be determined unauthenticated,
 #because the error indicating channel binding enforcement
 #will be returned regardless of a successful LDAPS bind.
-def run_ldaps(inputUser, inputPassword, dcTarget):
+def run_ldaps_noEPA(inputUser, inputPassword, dcTarget):
     try:
         tls = ldap3.Tls(validate=ssl.CERT_NONE, version=ssl.PROTOCOL_TLSv1_2)
         ldapServer = ldap3.Server(
@@ -39,6 +41,35 @@ def run_ldaps(inputUser, inputPassword, dcTarget):
     except Exception as e:
         print("\n   [!] "+ dcTarget+" -", str(e))
         print("        * Ensure DNS is resolving properly, and that you can reach LDAPS on this host")
+
+#Conduct a bind to LDAPS with channel binding supported
+#but intentionally miscalculated. In the case that and
+#LDAPS bind has without channel binding supported has occured,
+#you can determine whether the policy is set to "never" or
+#if it's set to "when supported" based on the potential
+#error recieved from the bind attempt.
+async def run_ldaps_withEPA(inputUser, inputPassword, dcTarget, fqdn):
+    try:
+        url = 'ldaps+ntlm-password://'+inputUser + ':' + inputPassword +'@' + dcTarget
+        conn_url = MSLDAPURLDecoder(url)
+        ldaps_client = conn_url.get_client()
+        ldapsClientConn = MSLDAPClientConnection(ldaps_client.target, ldaps_client.creds)
+        _, err = await ldapsClientConn.connect()
+        if err is not None:
+            print("ERROR while connecting to " + dcTarget + ": " + err)
+        #forcing a miscalculation of the "Channel Bindings" av pair in Type 3 NTLM message
+        ldapsClientConn.cb_data = b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        _, err = await ldapsClientConn.bind()
+        if "data 80090346" in str(err):
+            return True
+        elif "data 52e" in str(err):
+            return False
+        elif err is not None:
+            print("ERROR while connecting to " + dcTarget + ": " + err)
+        elif err is None:
+            return False
+    except Exception as e:
+        print("something went wrong during ldaps_withEPA bind:" + str(e))
 
 
 #DNS query of an SRV record that should return
@@ -185,25 +216,34 @@ if __name__ == '__main__':
     print("\n~Checking DCs for LDAP NTLM relay protections~")
     username = fqdn + "\\" + domainUser
     #print("VALUES AUTHING WITH:\nUser: "+domainUser+"\nPass: " +password + "\nDomain:  "+fqdn)
+
     for dc in dcList:
         print("   " + dc)
         if options.method == "BOTH":
             ldapIsProtected = run_ldap(username, password, dc)
             if ldapIsProtected == False:
-                print("      [+] (LDAP) SERVER SIGNING REQUIREMENTS NOT ENFORCED! ")
+                print("      [+] (LDAP)  SERVER SIGNING REQUIREMENTS NOT ENFORCED! ")
             elif ldapIsProtected == True:
-                print("      [-] (LDAP) Server enforcing signing requirements")
+                print("      [-] (LDAP)  server enforcing signing requirements")
             else:
                 print("Something bad happened during LDAP bind")
         if DoesLdapsCompleteHandshake(dc) == True:
-            ldapsIsProtected = run_ldaps(username, password, dc)
-            if ldapsIsProtected == False:
-                print("      [+] (LDAPS) CHANNEL BINDING NOT REQUIRED! PARTY TIME!")
-            elif ldapsIsProtected == True:
-                print("      [-] (LDAPS) channel binding required, no fun allowed")
+            ldapsChannelBindingAlwaysCheck = run_ldaps_noEPA(username, password, dc)
+            ldapsChannelBindingWhenSupportedCheck = asyncio.run(run_ldaps_withEPA(username, password, dc, fqdn))
+            if ldapsChannelBindingAlwaysCheck == False and ldapsChannelBindingWhenSupportedCheck == True:
+                print("      [-] (LDAPS) channel binding is set to \"when supported\" - this")
+                print("                  may prevent an NTLM relay depending on the client's")
+                print("                  support for channel binding.")
+            elif ldapsChannelBindingAlwaysCheck == False and ldapsChannelBindingWhenSupportedCheck == False:
+                    print("      [+] (LDAPS) CHANNEL BINDING SET TO \"NEVER\"! PARTY TIME!")
+            elif ldapsChannelBindingAlwaysCheck == True:
+                print("      [-] (LDAPS) channel binding set to \"required\", no fun allowed")
             else:
                 print("\nSomething went wrong...")
+                print("For troubleshooting:\nldapsChannelBindingAlwaysCheck - " +str(ldapsChannelBindingAlwaysCheck)+"\nldapsChannelBindingWhenSupportedCheck: "+str(ldapsChannelBindingWhenSupportedCheck))
                 exit()
+            #print("For troubleshooting:\nldapsChannelBindingAlwaysCheck - " +str(ldapsChannelBindingAlwaysCheck)+"\nldapsChannelBindingWhenSupportedCheck: "+str(ldapsChannelBindingWhenSupportedCheck))
+                
         elif DoesLdapsCompleteHandshake(dc) == False:
             print("      [!] "+dc+ " - cannot complete TLS handshake, cert likely not configured")
     print()
