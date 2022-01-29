@@ -134,7 +134,7 @@ def DoesLdapsCompleteHandshake(dcIp):
         ssl_sock.close()
         return False
     else:
-      print("Unexpected error during LDAPS handshake: " + e)
+      print("Unexpected error during LDAPS handshake: " + str(e))
     ssl_sock.close()
 
 
