@@ -142,26 +142,23 @@ def DoesLdapsCompleteHandshake(dcIp):
 #requirements are enforced based on potential errors
 #during the bind attempt. 
 def run_ldap(inputUser, inputPassword, dcTarget):
-    try:
-        ldapServer = ldap3.Server(
-            dcTarget, use_ssl=False, port=389, get_info=ldap3.ALL)
-        ldapConn = ldap3.Connection(
-            ldapServer, user=inputUser, password=inputPassword, authentication=ldap3.NTLM)
-        if not ldapConn.bind():
-            if "stronger" in str(ldapConn.result):
-                return True #because LDAP server signing requirements ARE enforced
-            elif "data 52e" or "data 532" in str(ldapConn.result):
-                print("[!!!] invalid credentials - aborting to prevent unnecessary authentication")
-                exit()
-            else:
-                print("UNEXPECTED ERROR: " + str(ldapConn.result))
-        else:
-            #LDAPS bind successful
-            return False #because LDAP server signing requirements are not enforced
+    ldapServer = ldap3.Server(
+        dcTarget, use_ssl=False, port=389, get_info=ldap3.ALL)
+    ldapConn = ldap3.Connection(
+        ldapServer, user=inputUser, password=inputPassword, authentication=ldap3.NTLM)
+    if not ldapConn.bind():
+        if "stronger" in str(ldapConn.result):
+            return True #because LDAP server signing requirements ARE enforced
+        elif "data 52e" or "data 532" in str(ldapConn.result):
+            print("[!!!] invalid credentials - aborting to prevent unnecessary authentication")
             exit()
-    except Exception as e:
-        print("\n   [!] "+ dcTarget+" -", str(e))
-        print("        * Ensure DNS is resolving properly, and that you can reach LDAPS on this host")
+        else:
+            print("UNEXPECTED ERROR: " + str(ldapConn.result))
+    else:
+        #LDAPS bind successful
+        return False #because LDAP server signing requirements are not enforced
+        exit()
+
 
 
 if __name__ == '__main__':
@@ -219,31 +216,32 @@ if __name__ == '__main__':
 
     for dc in dcList:
         print("   " + dc)
-        if options.method == "BOTH":
-            ldapIsProtected = run_ldap(username, password, dc)
-            if ldapIsProtected == False:
-                print("      [+] (LDAP)  SERVER SIGNING REQUIREMENTS NOT ENFORCED! ")
-            elif ldapIsProtected == True:
-                print("      [-] (LDAP)  server enforcing signing requirements")
-            else:
-                print("Something bad happened during LDAP bind")
-        if DoesLdapsCompleteHandshake(dc) == True:
-            ldapsChannelBindingAlwaysCheck = run_ldaps_noEPA(username, password, dc)
-            ldapsChannelBindingWhenSupportedCheck = asyncio.run(run_ldaps_withEPA(username, password, dc, fqdn))
-            if ldapsChannelBindingAlwaysCheck == False and ldapsChannelBindingWhenSupportedCheck == True:
-                print("      [-] (LDAPS) channel binding is set to \"when supported\" - this")
-                print("                  may prevent an NTLM relay depending on the client's")
-                print("                  support for channel binding.")
-            elif ldapsChannelBindingAlwaysCheck == False and ldapsChannelBindingWhenSupportedCheck == False:
-                    print("      [+] (LDAPS) CHANNEL BINDING SET TO \"NEVER\"! PARTY TIME!")
-            elif ldapsChannelBindingAlwaysCheck == True:
-                print("      [-] (LDAPS) channel binding set to \"required\", no fun allowed")
-            else:
-                print("\nSomething went wrong...")
-                print("For troubleshooting:\nldapsChannelBindingAlwaysCheck - " +str(ldapsChannelBindingAlwaysCheck)+"\nldapsChannelBindingWhenSupportedCheck: "+str(ldapsChannelBindingWhenSupportedCheck))
-                exit()
-            #print("For troubleshooting:\nldapsChannelBindingAlwaysCheck - " +str(ldapsChannelBindingAlwaysCheck)+"\nldapsChannelBindingWhenSupportedCheck: "+str(ldapsChannelBindingWhenSupportedCheck))
-                
-        elif DoesLdapsCompleteHandshake(dc) == False:
-            print("      [!] "+dc+ " - cannot complete TLS handshake, cert likely not configured")
+        try:
+            if options.method == "BOTH":
+                ldapIsProtected = run_ldap(username, password, dc)
+                if ldapIsProtected == False:
+                    print("      [+] (LDAP)  SERVER SIGNING REQUIREMENTS NOT ENFORCED! ")
+                elif ldapIsProtected == True:
+                    print("      [-] (LDAP)  server enforcing signing requirements")
+            if DoesLdapsCompleteHandshake(dc) == True:
+                ldapsChannelBindingAlwaysCheck = run_ldaps_noEPA(username, password, dc)
+                ldapsChannelBindingWhenSupportedCheck = asyncio.run(run_ldaps_withEPA(username, password, dc, fqdn))
+                if ldapsChannelBindingAlwaysCheck == False and ldapsChannelBindingWhenSupportedCheck == True:
+                    print("      [-] (LDAPS) channel binding is set to \"when supported\" - this")
+                    print("                  may prevent an NTLM relay depending on the client's")
+                    print("                  support for channel binding.")
+                elif ldapsChannelBindingAlwaysCheck == False and ldapsChannelBindingWhenSupportedCheck == False:
+                        print("      [+] (LDAPS) CHANNEL BINDING SET TO \"NEVER\"! PARTY TIME!")
+                elif ldapsChannelBindingAlwaysCheck == True:
+                    print("      [-] (LDAPS) channel binding set to \"required\", no fun allowed")
+                else:
+                    print("\nSomething went wrong...")
+                    print("For troubleshooting:\nldapsChannelBindingAlwaysCheck - " +str(ldapsChannelBindingAlwaysCheck)+"\nldapsChannelBindingWhenSupportedCheck: "+str(ldapsChannelBindingWhenSupportedCheck))
+                    exit()
+                #print("For troubleshooting:\nldapsChannelBindingAlwaysCheck - " +str(ldapsChannelBindingAlwaysCheck)+"\nldapsChannelBindingWhenSupportedCheck: "+str(ldapsChannelBindingWhenSupportedCheck))
+                    
+            elif DoesLdapsCompleteHandshake(dc) == False:
+                print("      [!] "+dc+ " - cannot complete TLS handshake, cert likely not configured")
+        except Exception as e:
+            print("      [-] ERROR: " + str(e))
     print()
