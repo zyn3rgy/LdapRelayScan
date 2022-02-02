@@ -77,6 +77,7 @@ async def run_ldaps_withEPA(inputUser, inputPassword, dcTarget, fqdn):
 def ResolveDCs(nameserverIp, fqdn):
     dcList = []
     DnsResolver = dns.resolver.Resolver()
+    DnsResolver.timeout = 20
     DnsResolver.nameservers = [nameserverIp]
     dcQuery = DnsResolver.resolve(
         "_ldap._tcp.dc._msdcs."+fqdn, 'SRV', tcp=True)
