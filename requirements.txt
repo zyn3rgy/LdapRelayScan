@@ -1,3 +1,0 @@
-dnspython
-ldap3
-msldap

@@ -162,7 +162,7 @@ def run_ldap(inputUser, inputPassword, dcTarget):
 
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(
         add_help=True, description="Checks Domain Controllers for LDAP authentication protection."
                                     + " You can check for only LDAPS protections (channel binding), this is done unauthenticated. "
@@ -223,7 +223,7 @@ if __name__ == '__main__':
                 if ldapIsProtected == False:
                     print("      [+] (LDAP)  SERVER SIGNING REQUIREMENTS NOT ENFORCED! ")
                 elif ldapIsProtected == True:
-                    print("      [-] (LDAP)  server enforcing signing requirements")
+                    print("      [-] (LDAP)  Server enforcing signing requirements.")
             if DoesLdapsCompleteHandshake(dc) == True:
                 ldapsChannelBindingAlwaysCheck = run_ldaps_noEPA(username, password, dc)
                 ldapsChannelBindingWhenSupportedCheck = asyncio.run(run_ldaps_withEPA(username, password, dc, fqdn))
@@ -232,9 +232,9 @@ if __name__ == '__main__':
                     print("                  may prevent an NTLM relay depending on the client's")
                     print("                  support for channel binding.")
                 elif ldapsChannelBindingAlwaysCheck == False and ldapsChannelBindingWhenSupportedCheck == False:
-                        print("      [+] (LDAPS) CHANNEL BINDING SET TO \"NEVER\"! PARTY TIME!")
+                        print("      [+] (LDAPS) CHANNEL BINDING SET TO \"NEVER\"!")
                 elif ldapsChannelBindingAlwaysCheck == True:
-                    print("      [-] (LDAPS) channel binding set to \"required\", no fun allowed")
+                    print("      [-] (LDAPS) channel binding set to \"REQUIRED\".")
                 else:
                     print("\nSomething went wrong...")
                     print("For troubleshooting:\nldapsChannelBindingAlwaysCheck - " +str(ldapsChannelBindingAlwaysCheck)+"\nldapsChannelBindingWhenSupportedCheck: "+str(ldapsChannelBindingWhenSupportedCheck))
@@ -246,3 +246,6 @@ if __name__ == '__main__':
         except Exception as e:
             print("      [-] ERROR: " + str(e))
     print()
+
+if __name__ == '__main__':
+    main()
