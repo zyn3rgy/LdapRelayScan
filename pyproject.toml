@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "LdapRelayScan"
+version = "0.1.0"
+description = "Check for LDAP protections regarding the relay of NTLM authentication"
+authors = ["zyn3rgy <null@localhost.local>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+dnspython = "^2.2.1"
+ldap3 = "^2.9.1"
+msldap = "^0.3.38"
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.2"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+ldaprelayscan = "ldaprelayscan.LdapRelayScan:main"
+lrs = "ldaprelayscan.LdapRelayScan:main"
