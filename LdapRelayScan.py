@@ -48,11 +48,12 @@ def run_ldaps_noEPA(inputUser, inputPassword, dcTarget):
 #you can determine whether the policy is set to "never" or
 #if it's set to "when supported" based on the potential
 #error recieved from the bind attempt.
-async def run_ldaps_withEPA(inputUser, inputPassword, dcTarget, fqdn):
+async def run_ldaps_withEPA(inputUser, inputPassword, dcTarget, fqdn, timeout):
     try:
         url = 'ldaps+ntlm-password://'+inputUser + ':' + inputPassword +'@' + dcTarget
         conn_url = MSLDAPURLDecoder(url)
         ldaps_client = conn_url.get_client()
+        ldaps_client.target.timeout = timeout
         ldapsClientConn = MSLDAPClientConnection(ldaps_client.target, ldaps_client.creds)
         _, err = await ldapsClientConn.connect()
         if err is not None:
@@ -173,6 +174,8 @@ if __name__ == '__main__':
                         help='DNS Nameserver on network. Any DC\'s IPv4 address should work.')
     parser.add_argument('-u', default='guest', metavar='username',action='store',
                         help='Domain username value.')
+    parser.add_argument('-timeout', default=10, metavar='timeout',action='store',
+                        help='The timeout for MSLDAP client connection.')
     parser.add_argument('-p', default='defaultpass', metavar='password',action='store',
                         help='Domain username value.')
     parser.add_argument('-nthash', metavar='nthash',action='store',
@@ -226,7 +229,7 @@ if __name__ == '__main__':
                     print("      [-] (LDAP)  server enforcing signing requirements")
             if DoesLdapsCompleteHandshake(dc) == True:
                 ldapsChannelBindingAlwaysCheck = run_ldaps_noEPA(username, password, dc)
-                ldapsChannelBindingWhenSupportedCheck = asyncio.run(run_ldaps_withEPA(username, password, dc, fqdn))
+                ldapsChannelBindingWhenSupportedCheck = asyncio.run(run_ldaps_withEPA(username, password, dc, fqdn, options.timeout))
                 if ldapsChannelBindingAlwaysCheck == False and ldapsChannelBindingWhenSupportedCheck == True:
                     print("      [-] (LDAPS) channel binding is set to \"when supported\" - this")
                     print("                  may prevent an NTLM relay depending on the client's")
