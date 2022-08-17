@@ -57,7 +57,7 @@ async def run_ldaps_withEPA(inputUser, inputPassword, dcTarget, fqdn, timeout):
         ldapsClientConn = MSLDAPClientConnection(ldaps_client.target, ldaps_client.creds)
         _, err = await ldapsClientConn.connect()
         if err is not None:
-            print("ERROR while connecting to " + dcTarget + ": " + err)
+            raise err
         #forcing a miscalculation of the "Channel Bindings" av pair in Type 3 NTLM message
         ldapsClientConn.cb_data = b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
         _, err = await ldapsClientConn.bind()
@@ -174,7 +174,7 @@ if __name__ == '__main__':
                         help='DNS Nameserver on network. Any DC\'s IPv4 address should work.')
     parser.add_argument('-u', default='guest', metavar='username',action='store',
                         help='Domain username value.')
-    parser.add_argument('-timeout', default=10, metavar='timeout',action='store',
+    parser.add_argument('-timeout', default=10, metavar='timeout',action='store', type=int,
                         help='The timeout for MSLDAP client connection.')
     parser.add_argument('-p', default='defaultpass', metavar='password',action='store',
                         help='Domain username value.')
