@@ -6,7 +6,8 @@ import ssl
 import socket
 import getpass
 import asyncio
-from msldap.commons.url import MSLDAPURLDecoder, MSLDAPClientConnection
+from msldap.connection import MSLDAPClientConnection
+from msldap.commons.factory import LDAPConnectionFactory
 
 
 class CheckLdaps:
@@ -51,7 +52,7 @@ def run_ldaps_noEPA(inputUser, inputPassword, dcTarget):
 async def run_ldaps_withEPA(inputUser, inputPassword, dcTarget, fqdn, timeout):
     try:
         url = 'ldaps+ntlm-password://'+inputUser + ':' + inputPassword +'@' + dcTarget
-        conn_url = MSLDAPURLDecoder(url)
+        conn_url = LDAPConnectionFactory.from_url(url)
         ldaps_client = conn_url.get_client()
         ldaps_client.target.timeout = timeout
         ldapsClientConn = MSLDAPClientConnection(ldaps_client.target, ldaps_client.creds)
