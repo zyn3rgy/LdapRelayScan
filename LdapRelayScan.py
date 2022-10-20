@@ -118,10 +118,12 @@ def InternalDomainFromAnonymousLdap(nameserverIp):
 #no error at all. Any other "successful" edge cases
 #not yet accounted for.
 def DoesLdapsCompleteHandshake(dcIp):
+  context = ssl.create_default_context()
+  context.verify_mode = ssl.CERT_OPTIONAL
   s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-  s.settimeout(5)
-  ssl_sock = ssl.wrap_socket(s,
-                            cert_reqs=ssl.CERT_OPTIONAL,
+  context.check_hostname = False
+  s.settimeout(50)
+  ssl_sock = context.wrap_socket(s, server_side=False,
                             suppress_ragged_eofs=False,
                             do_handshake_on_connect=False)
   ssl_sock.connect((dcIp, 636))
