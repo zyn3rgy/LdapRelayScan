@@ -230,7 +230,8 @@ if __name__ == '__main__':
                     print("      [-] (LDAP)  server enforcing signing requirements")
             if DoesLdapsCompleteHandshake(dc) == True:
                 ldapsChannelBindingAlwaysCheck = run_ldaps_noEPA(username, password, dc)
-                ldapsChannelBindingWhenSupportedCheck = asyncio.run(run_ldaps_withEPA(username, password, dc, fqdn, options.timeout))
+                #hardcoding default password (same as when param not provided) as temp fix for issue #17, successful auth not essential here
+                ldapsChannelBindingWhenSupportedCheck = asyncio.run(run_ldaps_withEPA(username, "defaultpass", dc, fqdn, options.timeout))
                 if ldapsChannelBindingAlwaysCheck == False and ldapsChannelBindingWhenSupportedCheck == True:
                     print("      [-] (LDAPS) channel binding is set to \"when supported\" - this")
                     print("                  may prevent an NTLM relay depending on the client's")
