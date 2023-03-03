@@ -1,3 +1,4 @@
+import urllib.parse
 import dns.resolver
 import ldap3
 import argparse
@@ -51,6 +52,7 @@ def run_ldaps_noEPA(inputUser, inputPassword, dcTarget):
 #error recieved from the bind attempt.
 async def run_ldaps_withEPA(inputUser, inputPassword, dcTarget, fqdn, timeout):
     try:
+        inputPassword = urllib.parse.quote(inputPassword)
         url = 'ldaps+ntlm-password://'+inputUser + ':' + inputPassword +'@' + dcTarget
         conn_url = LDAPConnectionFactory.from_url(url)
         ldaps_client = conn_url.get_client()
@@ -230,8 +232,7 @@ if __name__ == '__main__':
                     print("      [-] (LDAP)  server enforcing signing requirements")
             if DoesLdapsCompleteHandshake(dc) == True:
                 ldapsChannelBindingAlwaysCheck = run_ldaps_noEPA(username, password, dc)
-                #hardcoding default password (same as when param not provided) as temp fix for issue #17, successful auth not essential here
-                ldapsChannelBindingWhenSupportedCheck = asyncio.run(run_ldaps_withEPA(username, "defaultpass", dc, fqdn, options.timeout))
+                ldapsChannelBindingWhenSupportedCheck = asyncio.run(run_ldaps_withEPA(username, password, dc, fqdn, options.timeout))
                 if ldapsChannelBindingAlwaysCheck == False and ldapsChannelBindingWhenSupportedCheck == True:
                     print("      [-] (LDAPS) channel binding is set to \"when supported\" - this")
                     print("                  may prevent an NTLM relay depending on the client's")
