@@ -150,13 +150,14 @@ def run_ldap(inputUser, inputPassword, dcTarget):
     ldapConn = ldap3.Connection(
         ldapServer, user=inputUser, password=inputPassword, authentication=ldap3.NTLM)
     if not ldapConn.bind():
-        if "stronger" in str(ldapConn.result):
+        ldapConn_result_str = str(ldapConn.result)
+        if "stronger" in ldapConn_result_str:
             return True #because LDAP server signing requirements ARE enforced
-        elif "data 52e" or "data 532" in str(ldapConn.result):
+        elif "data 52e" in ldapConn_result_str or "data 532" in ldapConn_result_str:
             print("[!!!] invalid credentials - aborting to prevent unnecessary authentication")
             exit()
         else:
-            print("UNEXPECTED ERROR: " + str(ldapConn.result))
+            print("UNEXPECTED ERROR: " + ldapConn_result_str)
     else:
         #LDAPS bind successful
         return False #because LDAP server signing requirements are not enforced
