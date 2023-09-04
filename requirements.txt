@@ -1,3 +1,4 @@
+asysocks==0.2.5
 dnspython
 ldap3
 msldap
